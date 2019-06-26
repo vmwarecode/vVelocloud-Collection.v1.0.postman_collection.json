@@ -1,0 +1,705 @@
+{
+	"info": {
+		"_postman_id": "da981bc5-15d3-401f-9407-ee0cb5f12705",
+		"name": "vVelocloud-Collection.v1.0",
+		"description": "This is a postman collection for interacting with the VeloCloud Ochestrator (VCO).\nIt allow users to import a CSV or JSON file, and use the values from the data file in the requests and scripts\n\nAn environment must be used including the following:\nurl is the target URL or IP of the VeloCloud Orchestrator\nand at least 1 type of user:\nop-username is the operator admin username\nop-password is the operator adminpassword\nent-username is the enterprise adminuser\nent-password is the enterprise admin password\n\nA data file is also required with the following variables:\nEnterpriseName\tProfileName\tEdgeName modelNumber contactName contactEmail haEnabled\n\nmodelNumber can be: edge500, edge5X0, edge510, edge840, edge1000, edge1000qat, virtual\n\nThis sample collection can do the following:\n\nLogin to the VCO\nRetrieve the Enterprise ID\nCreate a new Profile\nModify the Profile vlan 1\nAdd a Edge Access Firewall rule\nProvision Edges\n\nIt can be used as a start point for more complex operations.\n\nVladimir F. de Sousa (vfrancadesou@vmware.com)\n\n",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "VCO Login",
+			"item": [
+				{
+					"name": "Login as Operator",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"username\" : \"{{op-username}}\",\n\t\"password\" : \"{{op-password}}\"\n}"
+						},
+						"url": {
+							"raw": "https://{{url}}/portal/rest/login/operatorLogin",
+							"protocol": "https",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"portal",
+								"rest",
+								"login",
+								"operatorLogin"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login as Enterprise Admin",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"{{ent-username}}\",\n    \"password\": \"{{ent-password}}\"\n}"
+						},
+						"url": {
+							"raw": "https://{{url}}/portal/rest/login/enterpriseLogin",
+							"protocol": "https",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"portal",
+								"rest",
+								"login",
+								"enterpriseLogin"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "38145fa7-a7da-4aa5-b527-c78a33bbdc87",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "c497dcd3-90a4-4e82-b1d3-32a2390f7e56",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "PROVISION-NEW-PROFILE-EDGE",
+			"item": [
+				{
+					"name": "Get Enterprise ID from list - as operator user",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "d202ce9f-b05e-46a5-a888-5393d44e5a43",
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"jsonData.result.forEach(function(value, index){ ",
+									"    if(value[\"name\"] == pm.iterationData.get(\"EnterpriseName\")){ ",
+									"       postman.setEnvironmentVariable(\"enterpriseID\", value[\"id\"]);",
+									"    } ",
+									"  })",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"jsonrpc\":\"2.0\",\"method\":\"enterpriseProxy/getEnterpriseProxyEnterprises\",\"id\":1}   "
+						},
+						"url": {
+							"raw": "https://{{url}}/portal/",
+							"protocol": "https",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"portal",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Single Enterprise ID - as enterprise user",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "d202ce9f-b05e-46a5-a888-5393d44e5a43",
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"enterpriseId\", jsonData.result.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"jsonrpc\":\"2.0\",\"method\":\"enterprise/getEnterprise\",\"params\":{\"id\":1,\"with\":[\"enterpriseProxy\"]},\"id\":1}"
+						},
+						"url": {
+							"raw": "https://{{url}}/portal/",
+							"protocol": "https",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"portal",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create New Profile",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "76536819-4542-4d12-9c58-805a52c0b1b5",
+								"exec": [
+									"if (pm.iterationData.get(\"ProfileName\")==\"null\") {",
+									"throw new Error('No Profile config')}",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"id": "98aaf839-2019-49e5-b7ad-e3f51de834d5",
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"jsonrpc\":\"2.0\",\"method\":\"configuration/cloneEnterpriseTemplate\",\"params\":{\"name\":\"{{ProfileName}}\",\"description\":\"\",\"enterpriseId\":{{enterpriseId}} },\"id\":1}"
+						},
+						"url": {
+							"raw": "https://{{url}}/portal/",
+							"protocol": "https",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"portal",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Profile ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "630187ff-ef66-4454-9ebf-fe730a7918c1",
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"jsonData.result.forEach(function(value, index){ ",
+									"    if(value[\"name\"] == pm.iterationData.get(\"ProfileName\")){",
+									"       postman.setEnvironmentVariable(\"profileId\", value[\"id\"]);",
+									"    } ",
+									"  })"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "5c7dbdec-4562-4f76-b0e3-fdcc686d78a0",
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"jsonrpc\":\"2.0\",\"method\":\"enterprise/getEnterpriseConfigurations\",\"params\":{\"enterpriseId\":{{enterpriseId}}},\"id\":1}"
+						},
+						"url": {
+							"raw": "https://{{url}}/portal/",
+							"protocol": "https",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"portal",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Profile Modules IDs",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "630187ff-ef66-4454-9ebf-fe730a7918c1",
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"deviceSettings-moduleId\",jsonData.result.modules[0].id);",
+									"postman.setEnvironmentVariable(\"firewall-moduleId\",jsonData.result.modules[1].id);",
+									"postman.setEnvironmentVariable(\"QOS-moduleId\",jsonData.result.modules[2].id);",
+									"postman.setEnvironmentVariable(\"WAN-moduleId\",jsonData.result.modules[3].id);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "5c7dbdec-4562-4f76-b0e3-fdcc686d78a0",
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"jsonrpc\":\"2.0\",\"method\":\"configuration/getConfiguration\",\"params\":{\"id\":{{profileId}},\"with\":[\"modules\",\"edgeCount\"]},\"id\":1}"
+						},
+						"url": {
+							"raw": "https://{{url}}/portal/",
+							"protocol": "https",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"portal",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Profile Device Settings and Prepare configuration",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "b36434ee-f839-4280-bab7-02272de82c51",
+								"exec": [
+									"var vlan1 = {",
+									"                            \"vlanId\": 1,",
+									"                            \"name\": \"Corporate\",",
+									"                            \"segmentId\": 0,",
+									"                            \"disabled\": false,",
+									"                            \"advertise\": false,",
+									"                            \"cost\": 10,",
+									"                            \"cidrIp\": \"127.0.0.1\",",
+									"                            \"cidrPrefix\": 30,",
+									"                            \"netmask\": \"255.255.255.252\",",
+									"                            \"dhcp\": {",
+									"                                \"enabled\": false,",
+									"                                \"leaseTimeSeconds\": 86400,",
+									"                                \"options\": []",
+									"                            },",
+									"                            \"staticReserved\": 10,",
+									"                            \"baseDhcpAddr\": 0,",
+									"                            \"numDhcpAddr\": 0,",
+									"                            \"multicast\": {",
+									"                                \"igmp\": {",
+									"                                    \"enabled\": false,",
+									"                                    \"type\": \"IGMP_V2\"",
+									"                                },",
+									"                                \"pim\": {",
+									"                                    \"enabled\": false,",
+									"                                    \"type\": \"PIM_SM\"",
+									"                                },",
+									"                                \"pimKeepAliveTimerSeconds\": null,",
+									"                                \"pimPruneIntervalSeconds\": null,",
+									"                                \"igmpHostQueryIntervalSeconds\": null,",
+									"                                \"igmpMaxQueryResponse\": null",
+									"                            },",
+									"                            \"ospf\": {",
+									"                                \"enabled\": false,",
+									"                                \"area\": \"\",",
+									"                                \"passiveInterface\": true",
+									"                            },",
+									"                            \"bindEdgeAddress\": true",
+									"                        }",
+									"var jsonData = JSON.parse(responseBody);",
+									"jsonData.result.modules[0].data.lan.networks[0] = vlan1;",
+									"postman.setEnvironmentVariable(\"NewProfileDeviceSettingsData\",JSON.stringify(jsonData.result.modules[0].data));",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"jsonrpc\": \"2.0\",\n    \"method\": \"configuration/getConfiguration\",\n    \"params\": {\n        \"id\": {{profileId}},\n        \"with\": [\n            \"modules\"\n        ],\n        \"enterpriseId\": {{enterpriseId}}\n    },\n    \"id\": 1\n}"
+						},
+						"url": {
+							"raw": "https://{{url}}/portal/",
+							"protocol": "https",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"portal",
+								""
+							]
+						},
+						"description": "Retrieve Profile configuration , parse module ID for the profile and replace the existing vlan 1 with a vlan that has an IP address on it. \nReason is that every vlan must have an associated IP address.\nThis IP will have advertise disabled."
+					},
+					"response": []
+				},
+				{
+					"name": "Replace VLAN 1 in Profile",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "b36434ee-f839-4280-bab7-02272de82c51",
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "54fa86a8-68cc-453c-b76e-267feb8342b9",
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"jsonrpc\": \"2.0\",\n    \"method\": \"configuration/updateConfigurationModule\",\n    \"params\": {\n        \"id\": {{deviceSettings-moduleId}},\n        \"_update\": {\n            \"data\": {{NewProfileDeviceSettingsData}},\n            \"name\": \"deviceSettings\"\n        },\n        \"returnData\": true,\n        \"enterpriseId\": {{enterpriseId}}\n    },\n    \"id\": 1\n}"
+						},
+						"url": {
+							"raw": "https://{{url}}/portal/",
+							"protocol": "https",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"portal",
+								""
+							]
+						},
+						"description": "GET FULL VCE CONFIG"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Profile Firewall Rules and Prepare new edge access rules",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "b36434ee-f839-4280-bab7-02272de82c51",
+								"exec": [
+									"edgefwrule = {",
+									"            \"enabled\": true,",
+									"            \"allowSelectedIp\": [",
+									"              \"169.254.129.1\"",
+									"            ]",
+									"          }",
+									"          ",
+									"var jsonData = JSON.parse(responseBody);",
+									"jsonData.result.modules[1].data.services.ssh = edgefwrule;",
+									"postman.setEnvironmentVariable(\"newfirewalldata\",JSON.stringify(jsonData.result.modules[1].data));",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"jsonrpc\": \"2.0\",\n    \"method\": \"configuration/getConfiguration\",\n    \"params\": {\n        \"id\": {{profileId}},\n        \"with\": [\n            \"modules\"\n        ],\n        \"enterpriseId\": {{enterpriseId}}\n    },\n    \"id\": 1\n}"
+						},
+						"url": {
+							"raw": "https://{{url}}/portal/",
+							"protocol": "https",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"portal",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Profile Firewall Rule - Edge Access SSH IP list",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "b36434ee-f839-4280-bab7-02272de82c51",
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "54fa86a8-68cc-453c-b76e-267feb8342b9",
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"jsonrpc\": \"2.0\",\n    \"method\": \"configuration/updateConfigurationModule\",\n    \"params\": {\n        \"id\": {{firewall-moduleId}},\n        \"_update\": {\n            \"data\": {{newfirewalldata}},\n            \"description\": null,\n            \"name\": \"firewall\"\n        },\n        \"returnData\": true,\n        \"enterpriseId\": {{enterpriseId}}\n    },\n    \"id\": 1\n}"
+						},
+						"url": {
+							"raw": "https://{{url}}/portal/",
+							"protocol": "https",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"portal",
+								""
+							]
+						},
+						"description": "GET FULL VCE CONFIG"
+					},
+					"response": []
+				},
+				{
+					"name": "Provision a new Edge - simple form",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "11cf87ca-24fd-4f86-8b04-ddb10974ad26",
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"edgeId\", jsonData.result.id);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "64bb99cf-2557-4bd1-9a55-187830b7116b",
+								"exec": [
+									"postman.setEnvironmentVariable(\"HAenabled\", pm.iterationData.get(\"haEnabled\")==\"TRUE\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"method\": \"edge/edgeProvision\",\n  \"params\": {\n    \"name\": \"{{EdgeName}}\",\n    \"configurationId\": \"{{profileId}}\",\n    \"serialNumber\": null,\n    \"site\": {\n       \"contactName\": \"{{contactName}}\",\n      \"contactEmail\": \"{{contactEmail}}\",\n            \"streetAddress\": null,\n      \"streetAddress2\": null,\n      \"city\": null,\n      \"state\": null,\n      \"postalCode\": null,\n      \"country\": null,\n      \"lat\": null,\n      \"lon\": null,\n      \"timezone\": null,\n      \"locale\": null,\n      \"shippingSameAsLocation\": 1,\n      \"shippingContactName\": null,\n      \"shippingAddress\": null,\n      \"shippingAddress2\": null,\n      \"shippingCity\": null,\n      \"shippingState\": null,\n      \"shippingPostalCode\": null,\n      \"shippingCountry\": null,\n       \"modified\": null\n    },\n    \"haEnabled\": {{HAenabled}},\n    \"modelNumber\": \"{{modelNumber}}\",\n    \"enterpriseId\": {{enterpriseId}}\n  },\n  \"id\": 1\n}"
+						},
+						"url": {
+							"raw": "https://{{url}}/portal/",
+							"protocol": "https",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"portal",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Add a new Profile, configure Profile vlan1 and edge access firewall rules, provision a new edge using basic information (mostly mandatory fields)",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "0b508444-f186-4236-b413-ce0f70f1c63c",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "93428156-658d-460a-94f8-b9b685a222e0",
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "fe4c85ed-8558-461e-95a9-a883a7004b4c",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "77cee7eb-1400-4e50-841e-f45e80ec648a",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
