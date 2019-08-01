@@ -1,8 +1,8 @@
 {
 	"info": {
 		"_postman_id": "da981bc5-15d3-401f-9407-ee0cb5f12705",
-		"name": "vVelocloud-Collection.v1.0",
-		"description": "This is a postman collection for interacting with the VeloCloud Ochestrator (VCO).\nIt allow users to import a CSV or JSON file, and use the values from the data file in the requests and scripts\n\nAn environment must be used including the following:\nurl is the target URL or IP of the VeloCloud Orchestrator\nand at least 1 type of user:\nop-username is the operator admin username\nop-password is the operator adminpassword\nent-username is the enterprise adminuser\nent-password is the enterprise admin password\n\nA data file is also required with the following variables:\nEnterpriseName\tProfileName\tEdgeName modelNumber contactName contactEmail haEnabled\n\nmodelNumber can be: edge500, edge5X0, edge510, edge840, edge1000, edge1000qat, virtual\n\nThis sample collection can do the following:\n\nLogin to the VCO\nRetrieve the Enterprise ID\nCreate a new Profile\nModify the Profile vlan 1\nAdd a Edge Access Firewall rule\nProvision Edges\n\nIt can be used as a start point for more complex operations.\n\nVladimir F. de Sousa (vfrancadesou@vmware.com)\n\n",
+		"name": "vVelocloud-Collection.v1.1",
+		"description": "This is a postman collection for interacting with the VeloCloud Ochestrator (VCO).\n\nIt allow users to import a CSV or JSON file, and use the values from the data file in the requests and scripts\n\nAn environment must be used including the following:\n\nurl is the target URL or IP of the VeloCloud Orchestrator\nand at least 1 enterprise user:\nent-username is the enterprise admin user\nent-password is the enterprise admin password\n\nA data file (csv for example) is also required with the following variables:\n\nEnterpriseName, ProfileName, EdgeName, modelNumber, contactName, contactEmail, haEnabled\n\nmodelNumber can be: edge500, edge5X0, edge510, edge840, edge1000, edge1000qat, virtual\n\nEx:\n\nEnterpriseName,ProfileName,EdgeName,modelNumber,contactName,contactEmail,haEnabled\nCustomer-1,API-HUB-Profile,VCE1-H-API,Virtual,Vladimir,vladimir@vladimir.com,null\nCustomer-1,API-HUB-Profile,VCE2-H-API,Virtual,Vladimir,vladimir@vladimir.com,TRUE\nCustomer-1,API-Branches-Profile,VCE3-B-API,Virtual,Vladimir,vladimir@vladimir.com,null\nCustomer-1,API-Branches-Profile,VCE4-B-API,Virtual,Vladimir,vladimir@vladimir.com,null\nCustomer-1,API-Branches-Profile,VCE5-B-API,Virtual,Vladimir,vladimir@vladimir.com,null\n\nThis sample collection can do the following:\n\nLogin to the VCO\n\nRetrieve the Enterprise ID\n\nCreate a new Profile\n\nModify the Profile vlan 1\n\nAdd a Edge Access Firewall rule\n\nProvision Edges\n\nIt can be used as a start point for more complex operations.\n\nNote: Consistent with the disclaimer on the Sample Exchange home page, please note that our API/SDK and Support team “do not guarantee the samples; they are provided ‘AS IS’” – i.e. while we are glad to answer questions about API usage and behavior generally speaking, we cannot and do not specifically support these scripts.\n\nHowever, please contact me if you see any issues or have any questions :) Vladimir F. de Sousa (vfrancadesou@vmware.com)",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -10,49 +10,10 @@
 			"name": "VCO Login",
 			"item": [
 				{
-					"name": "Login as Operator",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n\t\"username\" : \"{{op-username}}\",\n\t\"password\" : \"{{op-password}}\"\n}"
-						},
-						"url": {
-							"raw": "https://{{url}}/portal/rest/login/operatorLogin",
-							"protocol": "https",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"portal",
-								"rest",
-								"login",
-								"operatorLogin"
-							]
-						}
-					},
-					"response": []
-				},
-				{
 					"name": "Login as Enterprise Admin",
 					"request": {
 						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"name": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
+						"header": [],
 						"body": {
 							"mode": "raw",
 							"raw": "{\n    \"username\": \"{{ent-username}}\",\n    \"password\": \"{{ent-password}}\"\n}"
@@ -100,54 +61,6 @@
 		{
 			"name": "PROVISION-NEW-PROFILE-EDGE",
 			"item": [
-				{
-					"name": "Get Enterprise ID from list - as operator user",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "d202ce9f-b05e-46a5-a888-5393d44e5a43",
-								"exec": [
-									"var jsonData = JSON.parse(responseBody);",
-									"jsonData.result.forEach(function(value, index){ ",
-									"    if(value[\"name\"] == pm.iterationData.get(\"EnterpriseName\")){ ",
-									"       postman.setEnvironmentVariable(\"enterpriseID\", value[\"id\"]);",
-									"    } ",
-									"  })",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\"jsonrpc\":\"2.0\",\"method\":\"enterpriseProxy/getEnterpriseProxyEnterprises\",\"id\":1}   "
-						},
-						"url": {
-							"raw": "https://{{url}}/portal/",
-							"protocol": "https",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"portal",
-								""
-							]
-						}
-					},
-					"response": []
-				},
 				{
 					"name": "Get Single Enterprise ID - as enterprise user",
 					"event": [
@@ -510,7 +423,6 @@
 									"              \"169.254.129.1\"",
 									"            ]",
 									"          }",
-									"          ",
 									"var jsonData = JSON.parse(responseBody);",
 									"jsonData.result.modules[1].data.services.ssh = edgefwrule;",
 									"postman.setEnvironmentVariable(\"newfirewalldata\",JSON.stringify(jsonData.result.modules[1].data));",
@@ -632,8 +544,8 @@
 							{
 								"key": "Content-Type",
 								"name": "Content-Type",
-								"type": "text",
-								"value": "application/json"
+								"value": "application/json",
+								"type": "text"
 							}
 						],
 						"body": {
