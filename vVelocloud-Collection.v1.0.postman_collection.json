@@ -1,9 +1,10 @@
 {
 	"info": {
-		"_postman_id": "da981bc5-15d3-401f-9407-ee0cb5f12705",
-		"name": "vVelocloud-Collection.v1.1",
+		"_postman_id": "fe1e08bf-a410-4326-be5f-afb48a7bd927",
+		"name": "vVelocloud-Collection.v2.0-apr2023",
 		"description": "This is a postman collection for interacting with the VeloCloud Ochestrator (VCO).\n\nIt allow users to import a CSV or JSON file, and use the values from the data file in the requests and scripts\n\nAn environment must be used including the following:\n\nurl is the target URL or IP of the VeloCloud Orchestrator\nand at least 1 enterprise user:\nent-username is the enterprise admin user\nent-password is the enterprise admin password\n\nA data file (csv for example) is also required with the following variables:\n\nEnterpriseName, ProfileName, EdgeName, modelNumber, contactName, contactEmail, haEnabled\n\nmodelNumber can be: edge500, edge5X0, edge510, edge840, edge1000, edge1000qat, virtual\n\nEx:\n\nEnterpriseName,ProfileName,EdgeName,modelNumber,contactName,contactEmail,haEnabled\nCustomer-1,API-HUB-Profile,VCE1-H-API,Virtual,Vladimir,vladimir@vladimir.com,null\nCustomer-1,API-HUB-Profile,VCE2-H-API,Virtual,Vladimir,vladimir@vladimir.com,TRUE\nCustomer-1,API-Branches-Profile,VCE3-B-API,Virtual,Vladimir,vladimir@vladimir.com,null\nCustomer-1,API-Branches-Profile,VCE4-B-API,Virtual,Vladimir,vladimir@vladimir.com,null\nCustomer-1,API-Branches-Profile,VCE5-B-API,Virtual,Vladimir,vladimir@vladimir.com,null\n\nThis sample collection can do the following:\n\nLogin to the VCO\n\nRetrieve the Enterprise ID\n\nCreate a new Profile\n\nModify the Profile vlan 1\n\nAdd a Edge Access Firewall rule\n\nProvision Edges\n\nIt can be used as a start point for more complex operations.\n\nNote: Consistent with the disclaimer on the Sample Exchange home page, please note that our API/SDK and Support team “do not guarantee the samples; they are provided ‘AS IS’” – i.e. while we are glad to answer questions about API usage and behavior generally speaking, we cannot and do not specifically support these scripts.\n\nHowever, please contact me if you see any issues or have any questions :) Vladimir F. de Sousa (vfrancadesou@vmware.com)",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "17602490"
 	},
 	"item": [
 		{
@@ -39,7 +40,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "38145fa7-a7da-4aa5-b527-c78a33bbdc87",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -49,7 +49,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "c497dcd3-90a4-4e82-b1d3-32a2390f7e56",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -67,10 +66,10 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "d202ce9f-b05e-46a5-a888-5393d44e5a43",
 								"exec": [
 									"var jsonData = JSON.parse(responseBody);",
-									"postman.setEnvironmentVariable(\"enterpriseId\", jsonData.result.id);"
+									"postman.setEnvironmentVariable(\"enterpriseId\", jsonData.result.id);",
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -88,7 +87,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\"jsonrpc\":\"2.0\",\"method\":\"enterprise/getEnterprise\",\"params\":{\"id\":1,\"with\":[\"enterpriseProxy\"]},\"id\":1}"
+							"raw": "{\"jsonrpc\":\"2.0\",\"method\":\"enterprise/getEnterprise\",\"params\":{},\"id\":1}"
 						},
 						"url": {
 							"raw": "https://{{url}}/portal/",
@@ -110,10 +109,7 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "76536819-4542-4d12-9c58-805a52c0b1b5",
 								"exec": [
-									"if (pm.iterationData.get(\"ProfileName\")==\"null\") {",
-									"throw new Error('No Profile config')}",
 									""
 								],
 								"type": "text/javascript"
@@ -122,9 +118,12 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "98aaf839-2019-49e5-b7ad-e3f51de834d5",
 								"exec": [
-									""
+									"var jsonData = JSON.parse(responseBody);",
+									"if (jsonData.id == !\"configuration/cloneEnterpriseTemplate\"){",
+									"postman.setEnvironmentVariable(\"profileId\", jsonData.result.id);",
+									"postman.setEnvironmentVariable(\"profileName\", jsonData.result.name);",
+									"}"
 								],
 								"type": "text/javascript"
 							}
@@ -159,28 +158,32 @@
 					"response": []
 				},
 				{
-					"name": "Get Profile ID",
+					"name": "Get Profile Id",
 					"event": [
 						{
-							"listen": "test",
+							"listen": "prerequest",
 							"script": {
-								"id": "630187ff-ef66-4454-9ebf-fe730a7918c1",
 								"exec": [
-									"var jsonData = JSON.parse(responseBody);",
-									"jsonData.result.forEach(function(value, index){ ",
-									"    if(value[\"name\"] == pm.iterationData.get(\"ProfileName\")){",
-									"       postman.setEnvironmentVariable(\"profileId\", value[\"id\"]);",
-									"    } ",
-									"  })"
+									""
 								],
 								"type": "text/javascript"
 							}
 						},
 						{
-							"listen": "prerequest",
+							"listen": "test",
 							"script": {
-								"id": "5c7dbdec-4562-4f76-b0e3-fdcc686d78a0",
 								"exec": [
+									"const profileName = pm.iterationData.get('ProfileName');",
+									"//console.log('Environment Profile Name:',profileName);",
+									"const jsonreply = pm.response.json();",
+									"jsonreply.result.forEach(function(result) {",
+									"   // console.log(result);",
+									"  if (result.name==profileName){",
+									"      //console.log('Profile ID:', result.id);",
+									"      postman.setEnvironmentVariable('profileId',result.id);}",
+									"",
+									"});",
+									"",
 									""
 								],
 								"type": "text/javascript"
@@ -199,7 +202,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\"jsonrpc\":\"2.0\",\"method\":\"enterprise/getEnterpriseConfigurations\",\"params\":{\"enterpriseId\":{{enterpriseId}}},\"id\":1}"
+							"raw": "{\"id\":44,\"jsonrpc\":\"2.0\",\"method\":\"enterprise/getEnterpriseConfigurationsPolicies\",\"params\":{\"enterpriseId\":{{enterpriseId}}}}\n"
 						},
 						"url": {
 							"raw": "https://{{url}}/portal/",
@@ -216,68 +219,11 @@
 					"response": []
 				},
 				{
-					"name": "Get Profile Modules IDs",
+					"name": "Get Profile Configs",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "630187ff-ef66-4454-9ebf-fe730a7918c1",
-								"exec": [
-									"var jsonData = JSON.parse(responseBody);",
-									"postman.setEnvironmentVariable(\"deviceSettings-moduleId\",jsonData.result.modules[0].id);",
-									"postman.setEnvironmentVariable(\"firewall-moduleId\",jsonData.result.modules[1].id);",
-									"postman.setEnvironmentVariable(\"QOS-moduleId\",jsonData.result.modules[2].id);",
-									"postman.setEnvironmentVariable(\"WAN-moduleId\",jsonData.result.modules[3].id);"
-								],
-								"type": "text/javascript"
-							}
-						},
-						{
-							"listen": "prerequest",
-							"script": {
-								"id": "5c7dbdec-4562-4f76-b0e3-fdcc686d78a0",
-								"exec": [
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\"jsonrpc\":\"2.0\",\"method\":\"configuration/getConfiguration\",\"params\":{\"id\":{{profileId}},\"with\":[\"modules\",\"edgeCount\"]},\"id\":1}"
-						},
-						"url": {
-							"raw": "https://{{url}}/portal/",
-							"protocol": "https",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"portal",
-								""
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get Profile Device Settings and Prepare configuration",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "b36434ee-f839-4280-bab7-02272de82c51",
 								"exec": [
 									"var vlan1 = {",
 									"                            \"vlanId\": 1,",
@@ -318,10 +264,44 @@
 									"                            },",
 									"                            \"bindEdgeAddress\": true",
 									"                        }",
-									"var jsonData = JSON.parse(responseBody);",
-									"jsonData.result.modules[0].data.lan.networks[0] = vlan1;",
-									"postman.setEnvironmentVariable(\"NewProfileDeviceSettingsData\",JSON.stringify(jsonData.result.modules[0].data));",
+									"",
+									"var jsonData = pm.response.json();",
+									"for (var i = 0; i < jsonData.result.modules.length; i++) {",
+									"   //console.log(jsonData.result.modules[i].name)",
+									"    if(jsonData.result.modules[i].name==\"deviceSettings\") {",
+									"        postman.setEnvironmentVariable(\"deviceSettingsId\",jsonData.result.modules[i].id);",
+									"        jsonData.result.modules[i].data.lan.networks[0] = vlan1;",
+									"        postman.setEnvironmentVariable(\"NewProfileDeviceSettingsData\",JSON.stringify(jsonData.result.modules[i].data));",
+									"    } ",
+									"}",
+									"edgefwrule = {",
+									"            \"enabled\": true,",
+									"            \"allowSelectedIp\": [",
+									"              \"169.254.129.1\"",
+									"            ]",
+									"          }",
+									"var jsonData = pm.response.json();",
+									"for (var i = 0; i < jsonData.result.modules.length; i++) {",
+									"    //console.log(jsonData.result.modules[i].name)",
+									"    if(jsonData.result.modules[i].name==\"firewall\") {",
+									"        postman.setEnvironmentVariable(\"firewallId\",jsonData.result.modules[i].id);",
+									"        jsonData.result.modules[i].data.services.ssh = edgefwrule;",
+									"        postman.setEnvironmentVariable(\"newfirewalldata\",JSON.stringify(jsonData.result.modules[i].data));",
+									"    } ",
+									"}",
+									"",
+									"",
 									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"if (pm.iterationData.get(\"ProfileName\")==\"null\") {",
+									"throw new Error('No Profile config')}"
 								],
 								"type": "text/javascript"
 							}
@@ -339,7 +319,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"jsonrpc\": \"2.0\",\n    \"method\": \"configuration/getConfiguration\",\n    \"params\": {\n        \"id\": {{profileId}},\n        \"with\": [\n            \"modules\"\n        ],\n        \"enterpriseId\": {{enterpriseId}}\n    },\n    \"id\": 1\n}"
+							"raw": "{\"jsonrpc\":\"2.0\",\"method\":\"configuration/getConfiguration\",\"params\":{\"id\":{{profileId}},\"with\":[\"modules\"]},\"id\":1}"
 						},
 						"url": {
 							"raw": "https://{{url}}/portal/",
@@ -351,8 +331,7 @@
 								"portal",
 								""
 							]
-						},
-						"description": "Retrieve Profile configuration , parse module ID for the profile and replace the existing vlan 1 with a vlan that has an IP address on it. \nReason is that every vlan must have an associated IP address.\nThis IP will have advertise disabled."
+						}
 					},
 					"response": []
 				},
@@ -362,7 +341,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "b36434ee-f839-4280-bab7-02272de82c51",
 								"exec": [
 									""
 								],
@@ -372,7 +350,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "54fa86a8-68cc-453c-b76e-267feb8342b9",
 								"exec": [
 									""
 								],
@@ -392,7 +369,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"jsonrpc\": \"2.0\",\n    \"method\": \"configuration/updateConfigurationModule\",\n    \"params\": {\n        \"id\": {{deviceSettings-moduleId}},\n        \"_update\": {\n            \"data\": {{NewProfileDeviceSettingsData}},\n            \"name\": \"deviceSettings\"\n        },\n        \"returnData\": true,\n        \"enterpriseId\": {{enterpriseId}}\n    },\n    \"id\": 1\n}"
+							"raw": "{\n    \"jsonrpc\": \"2.0\",\n    \"method\": \"configuration/updateConfigurationModule\",\n    \"params\": {\n        \"id\": {{deviceSettingsId}},\n        \"_update\": {\n            \"data\": {{NewProfileDeviceSettingsData}},\n            \"name\": \"deviceSettings\"\n        },\n        \"returnData\": true,\n        \"enterpriseId\": {{enterpriseId}}\n    },\n    \"id\": 1\n}"
 						},
 						"url": {
 							"raw": "https://{{url}}/portal/",
@@ -410,63 +387,11 @@
 					"response": []
 				},
 				{
-					"name": "Get Profile Firewall Rules and Prepare new edge access rules",
+					"name": "Add Edge Access SSH IP list in Profile Edge Firewall Rule",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
-								"id": "b36434ee-f839-4280-bab7-02272de82c51",
-								"exec": [
-									"edgefwrule = {",
-									"            \"enabled\": true,",
-									"            \"allowSelectedIp\": [",
-									"              \"169.254.129.1\"",
-									"            ]",
-									"          }",
-									"var jsonData = JSON.parse(responseBody);",
-									"jsonData.result.modules[1].data.services.ssh = edgefwrule;",
-									"postman.setEnvironmentVariable(\"newfirewalldata\",JSON.stringify(jsonData.result.modules[1].data));",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"name": "Content-Type",
-								"type": "text",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"jsonrpc\": \"2.0\",\n    \"method\": \"configuration/getConfiguration\",\n    \"params\": {\n        \"id\": {{profileId}},\n        \"with\": [\n            \"modules\"\n        ],\n        \"enterpriseId\": {{enterpriseId}}\n    },\n    \"id\": 1\n}"
-						},
-						"url": {
-							"raw": "https://{{url}}/portal/",
-							"protocol": "https",
-							"host": [
-								"{{url}}"
-							],
-							"path": [
-								"portal",
-								""
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Add Profile Firewall Rule - Edge Access SSH IP list",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "b36434ee-f839-4280-bab7-02272de82c51",
 								"exec": [
 									""
 								],
@@ -476,7 +401,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "54fa86a8-68cc-453c-b76e-267feb8342b9",
 								"exec": [
 									""
 								],
@@ -496,7 +420,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"jsonrpc\": \"2.0\",\n    \"method\": \"configuration/updateConfigurationModule\",\n    \"params\": {\n        \"id\": {{firewall-moduleId}},\n        \"_update\": {\n            \"data\": {{newfirewalldata}},\n            \"description\": null,\n            \"name\": \"firewall\"\n        },\n        \"returnData\": true,\n        \"enterpriseId\": {{enterpriseId}}\n    },\n    \"id\": 1\n}"
+							"raw": "{\n    \"jsonrpc\": \"2.0\",\n    \"method\": \"configuration/updateConfigurationModule\",\n    \"params\": {\n        \"id\": {{firewallId}},\n        \"_update\": {\n            \"data\": {{newfirewalldata}},\n            \"description\": null,\n            \"name\": \"firewall\"\n        },\n        \"returnData\": true,\n        \"enterpriseId\": {{enterpriseId}}\n    },\n    \"id\": 1\n}"
 						},
 						"url": {
 							"raw": "https://{{url}}/portal/",
@@ -519,7 +443,6 @@
 						{
 							"listen": "test",
 							"script": {
-								"id": "11cf87ca-24fd-4f86-8b04-ddb10974ad26",
 								"exec": [
 									"var jsonData = JSON.parse(responseBody);",
 									"postman.setEnvironmentVariable(\"edgeId\", jsonData.result.id);"
@@ -530,7 +453,6 @@
 						{
 							"listen": "prerequest",
 							"script": {
-								"id": "64bb99cf-2557-4bd1-9a55-187830b7116b",
 								"exec": [
 									"postman.setEnvironmentVariable(\"HAenabled\", pm.iterationData.get(\"haEnabled\")==\"TRUE\");"
 								],
@@ -572,7 +494,6 @@
 				{
 					"listen": "prerequest",
 					"script": {
-						"id": "0b508444-f186-4236-b413-ce0f70f1c63c",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -582,7 +503,6 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "93428156-658d-460a-94f8-b9b685a222e0",
 						"type": "text/javascript",
 						"exec": [
 							""
@@ -596,7 +516,6 @@
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "fe4c85ed-8558-461e-95a9-a883a7004b4c",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -606,7 +525,6 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "77cee7eb-1400-4e50-841e-f45e80ec648a",
 				"type": "text/javascript",
 				"exec": [
 					""
